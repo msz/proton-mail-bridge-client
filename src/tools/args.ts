@@ -3,6 +3,7 @@
 import { basename } from "node:path";
 import { TOOLS } from "./definitions.js";
 import { readAttachmentFromUploadDir } from "./drafts-support.js";
+import { type ServerStateConfig } from "../utils/server-state-paths.js";
 import { type EmailAction, type EmailAttachmentInput } from "../types/index.js";
 import { logger } from "../utils/logger.js";
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
@@ -171,7 +172,7 @@ export function requireEmailAction(args: Record<string, unknown>, key = "action"
 // result carries base64 content, so drafts, the send queue and SMTP see no difference.
 export async function optionalAttachmentList(
   value: unknown,
-  config: { runtime: { allowFileUploadDir?: string } },
+  config: ServerStateConfig & { runtime: { allowFileUploadDir?: string } },
 ): Promise<EmailAttachmentInput[] | undefined> {
   if (value === undefined) {
     return undefined;
@@ -191,7 +192,7 @@ export async function optionalAttachmentList(
       if (attachment.content !== undefined) {
         throw new McpError(ErrorCode.InvalidParams, `attachments[${index}]: pass either content or path, not both.`);
       }
-      const data = await readAttachmentFromUploadDir(config.runtime.allowFileUploadDir, path);
+      const data = await readAttachmentFromUploadDir(config.runtime.allowFileUploadDir, path, config);
       return {
         filename: optionalString(attachment, "filename") ?? basename(path),
         content: data.toString("base64"),

@@ -1,10 +1,11 @@
 // Draft and attachment helpers a handler needs: what a listing hides, what counts as no change, and writing an attachment under the download directory.
 
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
-import { readFile, realpath } from "node:fs/promises";
+import { realpath } from "node:fs/promises";
 import { resolve, sep } from "node:path";
 import { isPathInside } from "../utils/helpers.js";
 import { isInsideServerState, type ServerStateConfig } from "../utils/server-state-paths.js";
+import { readRegularFile } from "../utils/regular-file.js";
 import { type DraftRecord, type SendEmailInput } from "../types/index.js";
 // list_drafts has no filter and returns every draft unconditionally — unlike get_draft/create_draft,
 // which each touch exactly one draft the caller already knows the content of. DraftRecord.attachments
@@ -171,10 +172,16 @@ export async function writeAttachmentToDownloadDir(downloadDir: string, saveTo: 
   return absTarget;
 }
 
+// Proton's limit for an outgoing message: a bigger file could not be sent, and reading it would only fill memory.
+export const MAX_ATTACHMENT_FILE_BYTES = 25 * 1024 * 1024;
+
 // Reads a file to attach from the upload directory (PROTONMAIL_ALLOW_FILE_UPLOAD_DIR). A relative path is relative to
 // that directory. Both sides are compared by real path, so a symlink inside it that leads out of it is refused. A missing
 // file gets the same answer as one outside, so a refusal does not tell what exists elsewhere on the machine.
-export async function readAttachmentFromUploadDir(uploadDir: string | undefined, path: string): Promise<Buffer> {
+// An upload directory that contains the server's own state ($HOME does) is no licence to read it: with `serverState`
+// given, the data directories, the CA file and the password files are refused too. As on the save side, a symlink swapped
+// in between the check and the read is the one race left.
+export async function readAttachmentFromUploadDir(uploadDir: string | undefined, path: string, serverState?: ServerStateConfig): Promise<Buffer> {
   if (!uploadDir) {
     throw new McpError(ErrorCode.InvalidParams, "PROTONMAIL_ALLOW_FILE_UPLOAD_DIR is not set, so attachments cannot be read from disk; pass content (base64) instead.");
   }
@@ -186,5 +193,12 @@ export async function readAttachmentFromUploadDir(uploadDir: string | undefined,
     throw notInside();
   });
   if (!isPathInside(realDir, realTarget, sep)) throw notInside();
-  return readFile(realTarget);
+  if (isInsideServerState(realTarget, serverState)) {
+    throw new McpError(ErrorCode.InvalidParams, `${path} is inside the server's own data directory or configuration, which is never attached.`);
+  }
+  // A FIFO or a device in the upload directory is refused instead of hanging the server.
+  return readRegularFile(realTarget, { binary: true, maxBytes: MAX_ATTACHMENT_FILE_BYTES }).catch((error: NodeJS.ErrnoException) => {
+    const why = error.code === "EFBIG" ? `larger than ${MAX_ATTACHMENT_FILE_BYTES / 1024 / 1024} MB, Proton's limit for a message` : error.code === "ENOTREG" ? "not a regular file" : (error.code ?? error.message);
+    throw new McpError(ErrorCode.InvalidParams, `Cannot attach ${path}: ${why}.`);
+  });
 }

@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Attach a file by path instead of base64** (`PROTONMAIL_ALLOW_FILE_UPLOAD_DIR`). Every tool that takes `attachments` (`send_email`, `reply_to_email`, `reply_all_email`, `forward_email`, `create_draft`, `update_draft`, `create_reply_draft`, `create_forward_draft`, `create_thread_reply_draft`) accepts `{ path }` in place of `{ filename, content }`, so the model no longer writes the file out as tokens (about 105,000 characters for a 78 KB PDF). It is off unless the setting names a folder. The path, relative to it or absolute, must lead to a regular file inside it by real path; a symlink out of it, the server's data directories, the CA file and the password files are refused, and so is a file over 25 MB, Proton's limit for a message. `filename` defaults to the file's name, `path` and `content` together are refused, and the audit log records the path, never the bytes. The bundle gets an optional "Attachment upload directory" setting, and `runtime-status` and `report` show it. Do not set it to `$HOME`: everything in it can be sent.
+
 ### Fixed
 
 - **`save_attachment(s)`, `export_email` and `get_attachment_content` with `saveTo` refuse to write over a file a Bridge password is read from** (`PROTONMAIL_PASSWORD_FILE`, or `passwordFile` in `PROTONMAIL_ACCOUNTS_JSON`), like they already refused the CA file, even when the download directory contains it. The path is now kept in the configuration for that; the password is still read once at start.

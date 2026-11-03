@@ -73,13 +73,13 @@ test("with no upload directory nothing is read", async () => {
 });
 
 // Through a whole server: create_draft stands for every tool that takes attachments (they share one parser).
-async function withServer({ uploads, root }, fn, runtime = {}) {
+async function withServer({ uploads, root }, fn, runtime = {}, [account] = [{}]) {
   const dataDir = join(root, "data");
   await mkdir(dataDir, { recursive: true });
   const conn = { host: "127.0.0.1", port: 9, secure: false, username: "owner@example.com", password: "x" };
   const config = {
     smtp: conn, imap: conn, dataDir, debug: false, cacheEnabled: true, analyticsEnabled: true, autoSync: false, syncInterval: 5,
-    accounts: [{ address: "owner@example.com", slug: "owner-example-com", imap: conn, smtp: conn, dataDir }],
+    accounts: [{ address: "owner@example.com", slug: "owner-example-com", imap: conn, smtp: conn, dataDir, ...account }],
     runtime: { readOnly: false, allowSend: true, allowRemoteDraftSync: false, allowedActions: [], startupSync: false, autoSyncFolder: "INBOX", autoSyncFull: false, autoSyncLimitPerFolder: 25,
       idleWatchEnabled: false, idleMaxSeconds: 30, confirmDestructive: false, allowEmptyFolder: false, restrictOutboundToSelf: false, maxInlineBytes: 40960, opDelayMs: 0, sendDelaySeconds: 0,
       allowFileUploadDir: uploads, ...runtime },
@@ -160,5 +160,61 @@ test("path and content in the same attachment are refused", async () => {
       assert.match(result.content[0].text, /either content or path, not both/);
       assert.deepEqual(await draftStore.listDrafts(), []);
     });
+  });
+});
+
+// ---- the server's own state, odd files and size --------------------------------------------------------
+
+// The upload directory may be as broad as $HOME and contain the server's data directory, its CA file and a password file.
+test("the server's data directory, CA file and password files are refused even inside the upload directory", async () => {
+  await withRoot(async ({ uploads }) => {
+    const dataDir = join(uploads, "data");
+    await mkdir(join(dataDir, "attachments"), { recursive: true });
+    await writeFile(join(dataDir, "grants.json"), "{}");
+    await writeFile(join(dataDir, "attachments", "saved.pdf"), PDF);
+    await writeFile(join(uploads, "bridge.pem"), "pem");
+    await writeFile(join(uploads, "bridge-password.txt"), "secret");
+    const state = { dataDir, accounts: [{ dataDir, passwordFile: join(uploads, "bridge-password.txt") }], runtime: { tlsCaFile: join(uploads, "bridge.pem") } };
+    for (const path of ["data/grants.json", "bridge.pem", "bridge-password.txt"]) {
+      await assert.rejects(readAttachmentFromUploadDir(uploads, path, state), /server's own data directory/, path);
+    }
+    // Reached through a symlink with an innocent name, too.
+    await symlink(join(uploads, "bridge-password.txt"), join(uploads, "notes.txt"));
+    await assert.rejects(readAttachmentFromUploadDir(uploads, "notes.txt", state), /server's own data directory/);
+    // An attachment the server saved earlier may be sent on.
+    assert.deepEqual(await readAttachmentFromUploadDir(uploads, "data/attachments/saved.pdf", state), PDF);
+  });
+});
+
+test("create_draft refuses a password file in the upload directory", async () => {
+  await withRoot(async (dirs) => {
+    const passwordFile = join(dirs.uploads, "bridge-password.txt");
+    await writeFile(passwordFile, "secret");
+    await withServer(dirs, async ({ call, draftStore }) => {
+      const result = await call("create_draft", draft([{ path: "bridge-password.txt" }]));
+      assert.ok(result.isError);
+      assert.match(result.content[0].text, /server's own data directory/);
+      assert.deepEqual(await draftStore.listDrafts(), []);
+    }, {}, [{ passwordFile }]);
+  });
+});
+
+test("a FIFO in the upload directory is refused instead of hanging the server", { skip: process.platform === "win32" ? "POSIX-only" : false }, async () => {
+  await withRoot(async ({ uploads }) => {
+    const { execFileSync } = await import("node:child_process");
+    execFileSync("mkfifo", [join(uploads, "pipe")]);
+    await assert.rejects(readAttachmentFromUploadDir(uploads, "pipe"), /not a regular file/);
+    await assert.rejects(readAttachmentFromUploadDir(uploads, "."), /not a regular file/);
+  });
+});
+
+test("a file larger than Proton's 25 MB message limit is refused without being read", async () => {
+  await withRoot(async ({ uploads }) => {
+    const { truncate } = await import("node:fs/promises");
+    await writeFile(join(uploads, "huge.bin"), "");
+    await truncate(join(uploads, "huge.bin"), 25 * 1024 * 1024 + 1);
+    await assert.rejects(readAttachmentFromUploadDir(uploads, "huge.bin"), /larger than 25 MB/);
+    await truncate(join(uploads, "huge.bin"), 25 * 1024 * 1024);
+    assert.equal((await readAttachmentFromUploadDir(uploads, "huge.bin")).length, 25 * 1024 * 1024);
   });
 });
