@@ -1,4 +1,4 @@
-// Draft and attachment helpers a handler needs: what a listing hides, what counts as no change, and writing an attachment under the download directory.
+// Draft and attachment helpers a handler needs: what a listing hides, what counts as no change, writing an attachment under the download directory and reading one from the upload directory.
 
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import { realpath } from "node:fs/promises";
