@@ -1,15 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile, mkdir } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { ElicitRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../dist/index.js";
 import { GrantService } from "../dist/services/grant-service.js";
 import { TOOLS } from "../dist/tools/definitions.js";
-import { needsApproval, buildApprovalMessage } from "../dist/utils/approval.js";
+import { needsApproval } from "../dist/utils/approval.js";
 import { closeTrackedIndexes } from "./helpers/close-indexes.mjs";
 
 // Independent adversarial suite for the 2.17 human-approval gate and delegation grants. Each test asserts the secure behaviour; the defects
@@ -66,7 +66,7 @@ async function withServer(options, fn) {
   }
 }
 
-const HIDDEN = new RegExp("[\\u0000-\\u0009\\u000b-\\u001f\\u007f\\u2028\\u2029\\u202a-\\u202e\\u2066-\\u2069\\u200b]", "u");
+const HIDDEN = /[\u0000-\u0009\u000b-\u001f\u007f\u2028\u2029\u202a-\u202e\u2066-\u2069\u200b]/u;
 const text = (r) => r.content[0].text;
 const mail = (to = "bob@example.com", extra = {}) => ({ to, subject: "Hi", body: "text", ...extra });
 
@@ -264,7 +264,7 @@ test("delegation: recipients that try to dodge matching are refused and spend no
 });
 
 test("delegation: a hand-edited grants.json cannot widen what the CLI would have allowed", async () => {
-  await withServer({ approval: "require", delegation: "on", answer: "decline" }, async ({ call, sent, dir, grants }) => {
+  await withServer({ approval: "require", delegation: "on", answer: "decline" }, async ({ call, sent, dir }) => {
     const future = new Date(Date.now() + HOUR).toISOString();
     const base = { id: "g-aaaaaaaa", note: "", account: ADDRESS, tools: ["send_email"], recipients: ["bob@example.com"], maxUses: 2, expiresAt: future, usedCount: 0, createdAt: future, revoked: false };
     const bad = [

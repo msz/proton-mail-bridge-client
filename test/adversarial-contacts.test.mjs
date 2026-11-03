@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -10,10 +10,6 @@ import { createServer } from "../dist/index.js";
 import { ContactService } from "../dist/services/contact-service.js";
 import { parseVcf } from "../dist/utils/vcard.js";
 import { closeTrackedIndexes } from "./helpers/close-indexes.mjs";
-import { IGNORE_EN } from "./helpers/injection-samples.mjs";
-
-const ENABLED_AT = Date.parse("2026-12-24T10:00:00Z");
-const NOW = Date.parse("2026-12-24T12:00:00Z");
 
 function runtime(overrides = {}) {
   return {
@@ -30,25 +26,6 @@ function account(address, dataDir, slug) {
     imap: { host: "127.0.0.1", port: 1143, secure: false, username: address, password: "x" },
     smtp: { host: "127.0.0.1", port: 1025, secure: false, username: address, password: "x" },
   };
-}
-
-function email(id, folder, from, to, subject, date) {
-  return {
-    id: `${folder}::${id}`, folder, uid: id, seq: id, messageId: `<${folder}-${id}@example.com>`, subject,
-    from: [from], to: [to], cc: [], bcc: [], replyTo: [], date, internalDate: date, isRead: true, isStarred: false,
-    flags: [], preview: subject, hasAttachments: false, attachments: [], labels: [], isAutomated: false,
-  };
-}
-
-async function seed(bundle, emails) {
-  const folder = (path, specialUse) => ({ path, name: path, delimiter: "/", specialUse, listed: true, subscribed: true, flags: [], messages: 0, unseen: 0 });
-  await bundle.localIndexService.recordSnapshot({
-    syncedAt: new Date().toISOString(),
-    folders: [folder("INBOX", "\\Inbox"), folder("Sent", "\\Sent")],
-    folderListComplete: true,
-    folderStats: [{ folder: "INBOX", fetched: 1, total: 1 }, { folder: "Sent", fetched: 1, total: 1 }],
-    emails,
-  });
 }
 
 // One server with one or two accounts, Bridge out of reach: everything comes from the seeded index.

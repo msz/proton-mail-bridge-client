@@ -17,7 +17,7 @@ test("hostile strings never break out of a Sieve string or line", () => {
       const { script } = exportSieve([rule]);
       // every physical line must be a comment, blank, or one of the known statement shapes
       for (const line of script.split("\n")) {
-        assert.ok(!new RegExp("[\\u2028\\u2029\\u0000\\u0085\\r]").test(line));
+        assert.ok(!/[\u2028\u2029\u0000\u0085\r]/.test(line));
         // strip string literals; whatever remains must not contain stray statements
         const rest = line.replace(/"(?:[^"\\]|\\.)*"/g, '""');
         assert.ok(!/evil/.test(rest), `escaped literal in ${JSON.stringify(line)}`);

@@ -56,8 +56,8 @@ test("endpoint check accepts loopback spellings and normalised forms", () => {
 
 test("a redirect from loopback to another host is not followed", async () => {
   let hit = 0;
-  const target = await listen((req, res) => { hit += 1; res.end("{}"); });
-  const redirector = await listen((req, res) => { res.statusCode = 307; res.setHeader("location", `http://127.0.0.1:${target.port}/api/embed`); res.end(); });
+  const target = await listen((_req, res) => { hit += 1; res.end("{}"); });
+  const redirector = await listen((_req, res) => { res.statusCode = 307; res.setHeader("location", `http://127.0.0.1:${target.port}/api/embed`); res.end(); });
   const dir = await mkdtemp(join(tmpdir(), "adv-emb-"));
   try {
     const service = makeService(`http://127.0.0.1:${redirector.port}/api/embed`, dir);
@@ -122,7 +122,7 @@ test("OpenAI-style: out-of-range and duplicate index values are rejected or orde
 
 test("a response that never ends is cut by the timeout", async () => {
   const start = Date.now();
-  const { error } = await embedAgainst((req, res) => {
+  const { error } = await embedAgainst((_req, res) => {
     res.write('{"embeddings":[[');
     const timer = setInterval(() => res.write("0,"), 5);
     res.on("close", () => clearInterval(timer));
@@ -148,7 +148,7 @@ test("DEFECT: no cap on vector dimensions - a 500,000-dimensional answer is acce
 test("fixed: a response over the size cap is cut off, not read to the end", async () => {
   let written = 0;
   const chunk = "0,".repeat(512 * 1024);
-  const { error } = await embedAgainst((req, res) => {
+  const { error } = await embedAgainst((_req, res) => {
     res.write('{"embeddings":[[');
     const timer = setInterval(() => {
       written += chunk.length;

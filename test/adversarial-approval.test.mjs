@@ -1,13 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { ElicitRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../dist/index.js";
-import { draftApprovalDigest } from "../dist/utils/approval.js";
 import { closeTrackedIndexes } from "./helpers/close-indexes.mjs";
 
 // The question is built from the stored draft (or plan) when the person is asked; the handler reads it again after the
@@ -60,8 +59,6 @@ async function withServer(fn) {
     await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 }
-
-const CHANGED = /changed after you were asked/;
 
 test("two parallel send_draft calls, each approved, send the draft once", async () => {
   await withServer(async ({ call, makeDraft, sent }) => {

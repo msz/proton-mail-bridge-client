@@ -62,7 +62,7 @@ test("queue cap: 2 running + 16 queued, rest busy immediately; slots recycled af
   const t0 = Date.now();
   const calls = Array.from({ length: 25 }, () => extractOfficeTextAsync(docx, "docx", { timeoutMs: 60000 }).then(() => "ok", (e) => e.reason));
   const res = await Promise.all(calls);
-  console.log("queue cap results", JSON.stringify(res.reduce((a, x) => ((a[x] = (a[x] ?? 0) + 1), a), {})), Date.now() - t0, "ms");
+  console.log("queue cap results", JSON.stringify(res.reduce((a, x) => { a[x] = (a[x] ?? 0) + 1; return a; }, {})), Date.now() - t0, "ms");
   assert.equal(res.filter((x) => x === "busy").length, 25 - 18);
   const again = await Promise.all([extractOfficeTextAsync(small(), "docx"), extractOfficeTextAsync(small(), "docx"), extractOfficeTextAsync(small(), "docx")]);
   assert.ok(again.every((r) => /hello/.test(r.text)));
