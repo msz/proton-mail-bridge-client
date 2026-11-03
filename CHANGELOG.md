@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`save_attachment(s)`, `export_email` and `get_attachment_content` with `saveTo` refuse to write over a file a Bridge password is read from** (`PROTONMAIL_PASSWORD_FILE`, or `passwordFile` in `PROTONMAIL_ACCOUNTS_JSON`), like they already refused the CA file, even when the download directory contains it. The path is now kept in the configuration for that; the password is still read once at start.
+
 ### Docs
 
 - Launch drafts and the demo script now say that new setup-wizard installs start in `drafts` mode, and the refusal text and `runtime-status` fields were checked on a live Bridge.

@@ -3,11 +3,12 @@ import { dirname, join, relative, resolve } from "node:path";
 import { isPathInside } from "./helpers.js";
 
 // Where the server keeps what it must be able to trust: the data directory of every account (grants, audit and event
-// logs, rules, contacts, the account marker...) and the certificate file it was told to trust. A download directory such
-// as $HOME contains them, so being inside it does not make a destination safe for a saved attachment.
+// logs, rules, contacts, the account marker...), the certificate file it was told to trust and the files the Bridge
+// passwords were read from. A download directory such as $HOME contains them, so being inside it does not make a
+// destination safe for a saved attachment.
 export interface ServerStateConfig {
   dataDir: string;
-  accounts?: ReadonlyArray<{ dataDir: string }>;
+  accounts?: ReadonlyArray<{ dataDir: string; passwordFile?: string }>;
   runtime?: { tlsCaFile?: string };
 }
 
@@ -67,6 +68,6 @@ export function isInsideServerState(target: string, config: ServerStateConfig | 
       if (sameFile(ancestor, dataDir)) return true;
     }
   }
-  const trusted = config.runtime?.tlsCaFile;
-  return Boolean(trusted) && (canonical(trusted as string) === target || sameFile(target, trusted as string));
+  const files = [config.runtime?.tlsCaFile, ...(config.accounts ?? []).map((account) => account.passwordFile)];
+  return files.some((file) => Boolean(file) && (canonical(file as string) === target || sameFile(target, file as string)));
 }

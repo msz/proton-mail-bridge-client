@@ -125,6 +125,21 @@ test("Bridge's certificate file, which the server trusts, is not a place to save
   });
 });
 
+test("a file a Bridge password was read from is not a place to save to", async () => {
+  await withRoot(async ({ root, dataDir }) => {
+    const passwordFile = join(root, "bridge-password.txt");
+    const otherPasswordFile = join(root, "second-password.txt");
+    await writeFile(passwordFile, "pw");
+    await writeFile(otherPasswordFile, "pw2");
+    const accounts = [{ dataDir, passwordFile }, { dataDir: join(root, "other"), passwordFile: otherPasswordFile }];
+    const service = new SimpleIMAPService(serviceConfig(dataDir, root, { accounts }));
+    await assert.rejects(service.writeAttachmentToPath("INBOX::1::2", attachment, passwordFile), /server's own/);
+    await assert.rejects(service.writeAttachmentToPath("INBOX::1::2", attachment, otherPasswordFile), /server's own/);
+    assert.equal(await readFile(passwordFile, "utf8"), "pw");
+    assert.equal(await readFile(otherPasswordFile, "utf8"), "pw2");
+  });
+});
+
 test("ordinary saves still work: beside the data directory, and in its attachments folder", async () => {
   await withRoot(async ({ root, dataDir }) => {
     const service = new SimpleIMAPService(serviceConfig(dataDir, root));

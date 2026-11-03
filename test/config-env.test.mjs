@@ -62,6 +62,7 @@ test("buildConfigFromEnv reads *_FILE secrets and runtime policy flags", async (
     const config = buildConfigFromEnv();
     assert.equal(config.smtp.username, "owner@example.com");
     assert.equal(config.smtp.password, "bridge-secret");
+    assert.equal(config.accounts[0].passwordFile, passwordFile);
     assert.equal(config.runtime.readOnly, true);
     assert.equal(config.runtime.allowSend, false);
     assert.equal(config.runtime.allowRemoteDraftSync, false);

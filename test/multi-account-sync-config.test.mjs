@@ -34,6 +34,8 @@ test("an additional account can read its password from a file or a command", () 
       const [, a, b] = buildConfigFromEnv().accounts;
       assert.equal(a.imap.password, "from-file");
       assert.equal(a.smtp.password, "from-file");
+      assert.equal(a.passwordFile, file);
+      assert.equal(b.passwordFile, undefined);
       assert.equal(b.imap.password, "from-command");
     },
   );

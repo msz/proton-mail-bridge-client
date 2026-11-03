@@ -212,6 +212,7 @@ export function parseAdditionalAccountsEnv(primary: AccountConfig): AccountConfi
       address,
       slug,
       dataDir: join(primary.dataDir, "accounts", slug),
+      ...(typeof value.passwordFile === "string" && value.passwordFile.trim() ? { passwordFile: value.passwordFile.trim() } : {}),
       imap: {
         host: stringField("imapHost", primary.imap.host),
         port: numberField("imapPort", primary.imap.port),
@@ -356,6 +357,7 @@ export function buildConfigFromEnv(): ProtonMailConfig {
     imap: primaryImap,
     smtp: primarySmtp,
     dataDir,
+    ...(process.env.PROTONMAIL_PASSWORD_FILE?.trim() ? { passwordFile: process.env.PROTONMAIL_PASSWORD_FILE.trim() } : {}),
   };
   const accounts: AccountConfig[] = [primaryAccount, ...parseAdditionalAccountsEnv(primaryAccount)];
 
