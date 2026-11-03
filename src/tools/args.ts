@@ -1,6 +1,8 @@
 // Reading a tool's arguments: the checks every handler repeats, and the note about arguments a tool does not declare.
 
+import { basename } from "node:path";
 import { TOOLS } from "./definitions.js";
+import { readAttachmentFromUploadDir } from "./drafts-support.js";
 import { type EmailAction, type EmailAttachmentInput } from "../types/index.js";
 import { logger } from "../utils/logger.js";
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
@@ -165,7 +167,12 @@ export function requireEmailAction(args: Record<string, unknown>, key = "action"
   }
 }
 
-export function optionalAttachmentList(value: unknown): EmailAttachmentInput[] | undefined {
+// An attachment is given as base64 `content`, or as a `path` read from PROTONMAIL_ALLOW_FILE_UPLOAD_DIR; either way the
+// result carries base64 content, so drafts, the send queue and SMTP see no difference.
+export async function optionalAttachmentList(
+  value: unknown,
+  config: { runtime: { allowFileUploadDir?: string } },
+): Promise<EmailAttachmentInput[] | undefined> {
   if (value === undefined) {
     return undefined;
   }
@@ -173,13 +180,29 @@ export function optionalAttachmentList(value: unknown): EmailAttachmentInput[] |
     throw new McpError(ErrorCode.InvalidParams, "attachments must be an array.");
   }
 
-  return value.map((item, index) => {
+  return Promise.all(value.map(async (item, index) => {
     const attachment = asObject(item);
-    const filename = requireString(attachment, "filename");
-    const content = requireString(attachment, "content");
+    const path = optionalString(attachment, "path");
     const contentType = optionalString(attachment, "contentType");
     const cid = optionalString(attachment, "cid");
     const contentDisposition = optionalString(attachment, "contentDisposition");
+
+    if (path) {
+      if (attachment.content !== undefined) {
+        throw new McpError(ErrorCode.InvalidParams, `attachments[${index}]: pass either content or path, not both.`);
+      }
+      const data = await readAttachmentFromUploadDir(config.runtime.allowFileUploadDir, path);
+      return {
+        filename: optionalString(attachment, "filename") ?? basename(path),
+        content: data.toString("base64"),
+        contentType,
+        cid,
+        contentDisposition,
+      };
+    }
+
+    const filename = requireString(attachment, "filename");
+    const content = requireString(attachment, "content");
 
     if (!filename || !content) {
       throw new McpError(
@@ -195,5 +218,5 @@ export function optionalAttachmentList(value: unknown): EmailAttachmentInput[] |
       cid,
       contentDisposition,
     };
-  });
+  }));
 }

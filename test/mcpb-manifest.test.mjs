@@ -50,13 +50,14 @@ test("the new settings are exposed", () => {
   for (const name of [
     "PROTONMAIL_IMAP_HOST", "PROTONMAIL_IMAP_PORT", "PROTONMAIL_SMTP_HOST", "PROTONMAIL_SMTP_PORT",
     "PROTONMAIL_READ_ONLY", "PROTONMAIL_ALLOW_SEND", "PROTONMAIL_SIGNATURE", "PROTONMAIL_ACCOUNTS_JSON",
-    "PROTONMAIL_DATA_DIR", "PROTONMAIL_ALLOW_FILE_DOWNLOAD_DIR", "PROTONMAIL_TOOL_TIER", "PROTONMAIL_MODE",
+    "PROTONMAIL_DATA_DIR", "PROTONMAIL_ALLOW_FILE_DOWNLOAD_DIR", "PROTONMAIL_ALLOW_FILE_UPLOAD_DIR", "PROTONMAIL_TOOL_TIER", "PROTONMAIL_MODE",
   ]) assert.ok(name in env, name);
   assert.equal(userConfig.mode.type, "string");
   assert.equal(userConfig.mode.required, false);
   assert.ok(!userConfig.mode.sensitive);
   assert.equal(userConfig.mode.default, undefined, "no default: leaving it empty must mean no mode");
   assert.equal(userConfig.download_dir.type, "directory");
+  assert.equal(userConfig.upload_dir.type, "directory");
   assert.equal(userConfig.data_dir.type, "directory");
 });
 

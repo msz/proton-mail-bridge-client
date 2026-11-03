@@ -31,10 +31,11 @@ test("notify announces a problem once per cause and its recovery once", () => {
 import { reportRuntime } from "../dist/cli.js";
 
 test("report prints how many folders are synced, not their names, and writes the home directory as ~", () => {
-  const runtime = { readOnly: false, allowSend: true, allowRemoteDraftSync: true, allowedActions: [], startupSync: false, autoSyncFolder: "INBOX,Sent,Folders/Clients/ACME", autoSyncFull: false, autoSyncLimitPerFolder: 25, idleWatchEnabled: false, idleMaxSeconds: 30, confirmDestructive: false, allowEmptyFolder: false, restrictOutboundToSelf: false, maxInlineBytes: 40, opDelayMs: 0, sendDelaySeconds: 0, allowFileDownloadDir: "/Users/someone/Downloads/mail" };
+  const runtime = { readOnly: false, allowSend: true, allowRemoteDraftSync: true, allowedActions: [], startupSync: false, autoSyncFolder: "INBOX,Sent,Folders/Clients/ACME", autoSyncFull: false, autoSyncLimitPerFolder: 25, idleWatchEnabled: false, idleMaxSeconds: 30, confirmDestructive: false, allowEmptyFolder: false, restrictOutboundToSelf: false, maxInlineBytes: 40, opDelayMs: 0, sendDelaySeconds: 0, allowFileDownloadDir: "/Users/someone/Downloads/mail", allowFileUploadDir: "/Users/someone/Outgoing" };
   const out = reportRuntime(runtime, "/Users/someone");
   assert.equal(out.autoSyncFolder, "3 folders");
   assert.equal(out.allowFileDownloadDir, "~/Downloads/mail");
+  assert.equal(out.allowFileUploadDir, "~/Outgoing");
   assert.doesNotMatch(JSON.stringify(out), /ACME|someone/);
   assert.equal(reportRuntime({ ...runtime, autoSyncFolder: "INBOX" }, "/Users/someone").autoSyncFolder, "1 folder");
 });

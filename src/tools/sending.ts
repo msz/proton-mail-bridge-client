@@ -42,7 +42,7 @@ export async function handleSendingTool(name: string, args: Record<string, unkno
       const fromName = optionalString(args, "fromName");
       const from = optionalString(args, "from");
       const sanitizeHtml = normalizeBoolean(args.sanitizeHtml, true);
-      const attachments = optionalAttachmentList(args.attachments);
+      const attachments = await optionalAttachmentList(args.attachments, config);
 
       ensureValidEmails(to, "to");
       ensureValidEmails(cc, "cc");
@@ -303,7 +303,7 @@ export async function handleSendingTool(name: string, args: Record<string, unkno
       const sendBundleReply = fromReply ? accountManager.byAddress(fromReply) : undefined;
       const sendBundleForReply = sendBundleReply ?? readBundleReply;
       const sanitizeHtmlReply = normalizeBoolean(args.sanitizeHtml, true);
-      const attachments = optionalAttachmentList(args.attachments);
+      const attachments = await optionalAttachmentList(args.attachments, config);
       const extraCc = parseEmails(optionalAddressList(args, "cc"));
       const extraBcc = parseEmails(optionalAddressList(args, "bcc"));
       const recipients = getReplyRecipients(detail, readBundleReply.config.smtp.username, replyAll, allAccountAddresses());
@@ -410,7 +410,7 @@ export async function handleSendingTool(name: string, args: Record<string, unkno
       const sendBundleRa = fromRa ? accountManager.byAddress(fromRa) : undefined;
       const sendBundleForRa = sendBundleRa ?? readBundleRa;
       const sanitizeHtmlRa = normalizeBoolean(args.sanitizeHtml, true);
-      const attachmentsRa = optionalAttachmentList(args.attachments);
+      const attachmentsRa = await optionalAttachmentList(args.attachments, config);
       const extraCcRa = parseEmails(optionalAddressList(args, "cc"));
       const extraBccRa = parseEmails(optionalAddressList(args, "bcc"));
       const recipientsRa = getReplyRecipients(detailRa, readBundleRa.config.smtp.username, true, allAccountAddresses());
@@ -620,7 +620,7 @@ export async function handleSendingTool(name: string, args: Record<string, unkno
       // content manually. attachmentParts was accepted in the schema and
       // documented but never read at all. Found live: forwarding a fixture
       // with one attachment produced a forward with zero attachments.
-      const attachments = optionalAttachmentList(args.attachments) ?? [];
+      const attachments = (await optionalAttachmentList(args.attachments, config)) ?? [];
       const includeAttachments = normalizeBoolean(args.includeAttachments, true);
       const attachmentParts = Array.isArray(args.attachmentParts)
         ? (args.attachmentParts as unknown[]).map(String)

@@ -1,6 +1,8 @@
 // Draft and attachment helpers a handler needs: what a listing hides, what counts as no change, and writing an attachment under the download directory.
 
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
+import { readFile, realpath } from "node:fs/promises";
+import { resolve, sep } from "node:path";
 import { isPathInside } from "../utils/helpers.js";
 import { isInsideServerState, type ServerStateConfig } from "../utils/server-state-paths.js";
 import { type DraftRecord, type SendEmailInput } from "../types/index.js";
@@ -167,4 +169,22 @@ export async function writeAttachmentToDownloadDir(downloadDir: string, saveTo: 
   const { writeFileNoFollow } = await import("../utils/safe-write.js");
   await writeFileNoFollow(absTarget, data);
   return absTarget;
+}
+
+// Reads a file to attach from the upload directory (PROTONMAIL_ALLOW_FILE_UPLOAD_DIR). A relative path is relative to
+// that directory. Both sides are compared by real path, so a symlink inside it that leads out of it is refused. A missing
+// file gets the same answer as one outside, so a refusal does not tell what exists elsewhere on the machine.
+export async function readAttachmentFromUploadDir(uploadDir: string | undefined, path: string): Promise<Buffer> {
+  if (!uploadDir) {
+    throw new McpError(ErrorCode.InvalidParams, "PROTONMAIL_ALLOW_FILE_UPLOAD_DIR is not set, so attachments cannot be read from disk; pass content (base64) instead.");
+  }
+  const notInside = () => new McpError(ErrorCode.InvalidParams, `${path} is not a file inside PROTONMAIL_ALLOW_FILE_UPLOAD_DIR.`);
+  const realDir = await realpath(resolve(uploadDir)).catch(() => {
+    throw new McpError(ErrorCode.InvalidParams, `PROTONMAIL_ALLOW_FILE_UPLOAD_DIR (${uploadDir}) does not exist.`);
+  });
+  const realTarget = await realpath(resolve(uploadDir, path)).catch(() => {
+    throw notInside();
+  });
+  if (!isPathInside(realDir, realTarget, sep)) throw notInside();
+  return readFile(realTarget);
 }

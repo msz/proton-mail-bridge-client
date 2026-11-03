@@ -32,7 +32,7 @@ export async function handleDraftTool(name: string, args: Record<string, unknown
       const body = requireString(args, "body");
       const replyTo = optionalString(args, "replyTo");
       const from = optionalString(args, "from");
-      const attachments = optionalAttachmentList(args.attachments);
+      const attachments = await optionalAttachmentList(args.attachments, config);
       const priority = optionalString(args, "priority");
 
       ensureValidEmails(to, "to");
@@ -133,7 +133,7 @@ export async function handleDraftTool(name: string, args: Record<string, unknown
       const body = requireString(args, "body");
       const isHtml = normalizeBoolean(args.isHtml, false);
       const replyAll = normalizeBoolean(args.replyAll, false);
-      const attachments = optionalAttachmentList(args.attachments);
+      const attachments = await optionalAttachmentList(args.attachments, config);
       const extraCc = parseEmails(optionalAddressList(args, "cc"));
       const extraBcc = parseEmails(optionalAddressList(args, "bcc"));
       const recipients = getReplyRecipients(detail, createReplyReadBundle.config.smtp.username, replyAll, allAccountAddresses());
@@ -245,7 +245,7 @@ export async function handleDraftTool(name: string, args: Record<string, unknown
       const to = parseEmails(requireAddressList(args, "to"));
       const cc = parseEmails(optionalAddressList(args, "cc"));
       const bcc = parseEmails(optionalAddressList(args, "bcc"));
-      const callerAttachments = optionalAttachmentList(args.attachments) ?? [];
+      const callerAttachments = (await optionalAttachmentList(args.attachments, config)) ?? [];
 
       ensureValidEmails(to, "to");
       ensureValidEmails(cc, "cc");
@@ -458,7 +458,7 @@ export async function handleDraftTool(name: string, args: Record<string, unknown
       const replyTo = optionalClearableString(args, "replyTo");
       const from = optionalString(args, "from");
       const priority = optionalString(args, "priority");
-      const attachments = args.attachments === undefined ? undefined : optionalAttachmentList(args.attachments);
+      const attachments = await optionalAttachmentList(args.attachments, config);
 
       if (to) {
         ensureValidEmails(to, "to");
@@ -676,7 +676,7 @@ export async function handleDraftTool(name: string, args: Record<string, unknown
       const body = requireString(args, "body");
       const isHtml = normalizeBoolean(args.isHtml, false);
       const replyAll = normalizeBoolean(args.replyAll, false);
-      const attachments = optionalAttachmentList(args.attachments);
+      const attachments = await optionalAttachmentList(args.attachments, config);
       const extraCc = parseEmails(optionalAddressList(args, "cc"));
       const extraBcc = parseEmails(optionalAddressList(args, "bcc"));
       const recipients = getReplyRecipients(detail, threadReplyBundle.config.smtp.username, replyAll, allAccountAddresses());

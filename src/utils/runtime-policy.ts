@@ -20,6 +20,7 @@ export function sanitizeRuntimeConfig(runtime: ProtonRuntimeConfig): Record<stri
     allowEmptyFolder: runtime.allowEmptyFolder,
     restrictOutboundToSelf: runtime.restrictOutboundToSelf,
     allowFileDownloadDir: runtime.allowFileDownloadDir ?? null,
+    allowFileUploadDir: runtime.allowFileUploadDir ?? null,
     shortenLinks: runtime.shortenLinks ?? false,
     tlsCaFileSet: Boolean(runtime.tlsCaFile),
     tlsInsecureHosts: runtime.tlsInsecureHosts ?? [],

@@ -983,11 +983,12 @@ export function maskAddress(address: string): string {
 export function reportRuntime(runtime: ProtonMailConfig["runtime"], home = homedir()): Record<string, unknown> {
   const sanitized = sanitizeRuntimeConfig(runtime) as Record<string, unknown>;
   const folders = typeof sanitized.autoSyncFolder === "string" ? sanitized.autoSyncFolder.split(",").filter((entry) => entry.trim()).length : undefined;
-  const download = typeof sanitized.allowFileDownloadDir === "string" ? sanitized.allowFileDownloadDir : undefined;
+  const tilde = (dir: unknown) => (typeof dir === "string" && home && dir.startsWith(home) ? `~${dir.slice(home.length)}` : dir);
   return {
     ...sanitized,
     autoSyncFolder: folders === undefined ? undefined : `${folders} folder${folders === 1 ? "" : "s"}`,
-    allowFileDownloadDir: download ? (home && download.startsWith(home) ? `~${download.slice(home.length)}` : download) : sanitized.allowFileDownloadDir,
+    allowFileDownloadDir: tilde(sanitized.allowFileDownloadDir),
+    allowFileUploadDir: tilde(sanitized.allowFileUploadDir),
   };
 }
 

@@ -73,6 +73,7 @@ test("sanitized runtime config excludes secrets and preserves policy flags", () 
     allowEmptyFolder: false,
     restrictOutboundToSelf: false,
     allowFileDownloadDir: null,
+    allowFileUploadDir: null,
     shortenLinks: false,
     tlsCaFileSet: false,
     tlsInsecureHosts: [],

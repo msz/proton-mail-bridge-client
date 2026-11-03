@@ -578,6 +578,8 @@ export interface ProtonRuntimeConfig {
   allowEmptyFolder: boolean;
   restrictOutboundToSelf: boolean;
   allowFileDownloadDir?: string;
+  /** Directory attachments may be read from by `path` (PROTONMAIL_ALLOW_FILE_UPLOAD_DIR). Unset: only base64 content is accepted. */
+  allowFileUploadDir?: string;
   maxInlineBytes: number;
   /** PEM file with Bridge's certificate (PROTONMAIL_TLS_CA_FILE): trusted for a Bridge reached by a name other than localhost. */
   tlsCaFile?: string;

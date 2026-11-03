@@ -39,6 +39,7 @@
         "PROTONMAIL_ACCOUNTS_JSON": "${user_config.accounts_json}",
         "PROTONMAIL_DATA_DIR": "${user_config.data_dir}",
         "PROTONMAIL_ALLOW_FILE_DOWNLOAD_DIR": "${user_config.download_dir}",
+        "PROTONMAIL_ALLOW_FILE_UPLOAD_DIR": "${user_config.upload_dir}",
         "PROTONMAIL_TOOL_TIER": "${user_config.tool_tier}",
         "PROTONMAIL_TOOLSET": "${user_config.toolset}",
         "PROTONMAIL_APPROVAL": "${user_config.approval}",
@@ -142,6 +143,12 @@
       "type": "directory",
       "title": "Attachment download directory",
       "description": "Folder that save_attachment and export_email may write into. Leave empty to disable saving to disk.",
+      "required": false
+    },
+    "upload_dir": {
+      "type": "directory",
+      "title": "Attachment upload directory",
+      "description": "Folder that drafts and sends may attach files from by path. Only put in it what you would send. Leave empty to allow only attachments passed as base64.",
       "required": false
     },
     "tool_tier": {

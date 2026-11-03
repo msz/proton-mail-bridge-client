@@ -319,6 +319,7 @@ export function buildConfigFromEnv(): ProtonMailConfig {
   const allowEmptyFolder = parseBooleanEnv("PROTONMAIL_ALLOW_EMPTY_FOLDER", false);
   const restrictOutboundToSelf = parseBooleanEnv("PROTONMAIL_RESTRICT_OUTBOUND_TO_SELF", false);
   const allowFileDownloadDir = process.env.PROTONMAIL_ALLOW_FILE_DOWNLOAD_DIR?.trim() || undefined;
+  const allowFileUploadDir = process.env.PROTONMAIL_ALLOW_FILE_UPLOAD_DIR?.trim() || undefined;
   const imapUsername = process.env.PROTONMAIL_IMAP_USERNAME?.trim() || username;
   const imapPassword = process.env.PROTONMAIL_IMAP_PASSWORD?.trim() || password;
   const opDelayMs = parseIntegerEnv("PROTONMAIL_OP_DELAY_MS", 0, 0, 5000);
@@ -395,6 +396,7 @@ export function buildConfigFromEnv(): ProtonMailConfig {
       allowEmptyFolder,
       restrictOutboundToSelf,
       allowFileDownloadDir,
+      allowFileUploadDir,
       // The value is in KB despite the historical name; PROTONMAIL_MAX_INLINE_KB is the clear spelling and wins.
       maxInlineBytes: parseIntegerEnv("PROTONMAIL_MAX_INLINE_KB", parseIntegerEnv("PROTONMAIL_MAX_INLINE_BYTES", 40, 1, 10240), 1, 10240),
       shortenLinks: parseBooleanEnv("PROTONMAIL_SHORTEN_LINKS", false),

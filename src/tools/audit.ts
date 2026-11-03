@@ -71,6 +71,7 @@ export function sanitizeAuditValue(value: unknown, depth = 0, seen: WeakSet<obje
               const object = asObject(attachment);
               return {
                 filename: object.filename,
+                path: object.path,
                 contentType: object.contentType,
                 cid: object.cid,
               };
